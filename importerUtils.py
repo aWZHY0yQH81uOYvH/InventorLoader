@@ -366,6 +366,7 @@ UINT16     = Struct('<H').unpack_from
 SINT16     = Struct('<h').unpack_from
 UINT32     = Struct('<L').unpack_from
 SINT32     = Struct('<l').unpack_from
+UINT64     = Struct('<Q').unpack_from
 SINT64     = Struct('<q').unpack_from
 FLOAT32    = Struct('<f').unpack_from
 FLOAT32_2D = Struct('<ff').unpack_from
@@ -520,6 +521,21 @@ def getUInt32(data, offset):
 	'''
 	val, = UINT32(data, offset)
 	return val, offset + 4
+
+def getUInt64(data, offset):
+	'''
+	Returns a single unsingned 64-Bit value.
+	Args:
+		data
+			A binary string.
+		offset
+			The zero based offset of the unsigned 64-Bit value.
+	Returns:
+		The unsigned 64-Bit value at offset.
+		The new position in the 'stream'.
+	'''
+	val, = UINT64(data, offset)
+	return val, offset + 8
 
 def getUInt32A(data, offset, size):
 	'''

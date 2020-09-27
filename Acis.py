@@ -37,7 +37,7 @@ DIR_Z  = VEC(0, 0, 1)
 # Primitives for Binary File Format (.sab)
 TAG_CHAR          =  2 # character (unsigned 8 bit)
 TAG_SHORT         =  3 # 16Bit signed value
-TAG_LONG          =  4 # 32Bit signed value
+TAG_LONG          =  4 # 32/64Bit signed value
 TAG_FLOAT         =  5 # 32Bit IEEE Float value
 TAG_DOUBLE        =  6 # 64Bit IEEE Float value
 TAG_UTF8_U8       =  7 #  8Bit length + UTF8-Char
@@ -57,6 +57,8 @@ TAG_VECTOR_3D     = 20 # 3D-Vector normalized
 TAG_ENUM_VALUE    = 21 # value of an enumeration
 TAG_VECTOR_2D     = 22 # U-V-Vector
 TAG_INT64         = 23 # used by AutoCAD ASM int64 attributes
+
+_is64Bit = False
 
 # TAG_FALSE, TAG_TRUE value mappings
 RANGE           = {TAG_FALSE: 'I',              TAG_TRUE: 'F'}
@@ -4374,11 +4376,12 @@ class AcisChunkHuge(_AcisChunkNumber_):
 		self.val, i = getSInt64(data, offset)
 		return i
 class AcisChunkLong(_AcisChunkNumber_):
-	'''32Bit signed value'''
+	'''32/64Bit signed value'''
 	def __init__(self, value = None):
 		super(AcisChunkLong, self).__init__(TAG_LONG, value)
 	def read(self, data, offset):
-		self.val, i = getSInt32(data, offset)
+		global _is64Bit
+		self.val, i = getSInt64(data, offset) if _is64Bit else getSInt32(data, offset)
 		return i
 class AcisChunkFloat(_AcisChunkNumber_):
 	'''32Bit IEEE float value'''
@@ -4447,7 +4450,8 @@ class AcisChunkEnumValue(_AcisChunk_):
 				pass
 		return u"%s " %(val)
 	def read(self, data, offset):
-		self.val, i = getUInt32(data, offset)
+		global _is64Bit
+		self.val, i = getUInt64(data, offset) if _is64Bit else getUInt32(data, offset)
 		return i
 	def getValue(self):
 		if (values):
@@ -4693,7 +4697,8 @@ class AcisReader(object):
 		chunk = ACIS_CONST_CHUNKS.get(tag, None)
 		if (chunk is None):
 			if (tag == 	TAG_ENTITY_REF):
-				refIdx, self._pos = getSInt32(self._data, self._pos)
+				global _is64Bit
+				refIdx, self._pos = getSInt64(self._data, self._pos) if _is64Bit else getSInt32(self._data, self._pos)
 				try:
 					chunk = self._refChunks[refIdx]
 				except:
@@ -4744,6 +4749,14 @@ class AcisReader(object):
 			self.header.records, self._pos = getUInt32(self._data, self._pos)
 			self.header.bodies, self._pos  = getUInt32(self._data, self._pos)
 			self.header.flags, self._pos   = getUInt32(self._data, self._pos)
+			self.header.version = int2version(self.header.version)
+		elif (self._data[0:15] == b'ASM BinaryFile8'):
+			global _is64Bit
+			_is64Bit = True
+			self.header.version, self._pos = getUInt64(self._data, 15)
+			self.header.records, self._pos = getUInt64(self._data, self._pos)
+			self.header.bodies, self._pos  = getUInt64(self._data, self._pos)
+			self.header.flags, self._pos   = getUInt64(self._data, self._pos)
 			self.header.version = int2version(self.header.version)
 		self.header.prodId  = self._readChunkBinary().val
 		self.header.prodVer = self._readChunkBinary().val

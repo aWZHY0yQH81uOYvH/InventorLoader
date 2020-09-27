@@ -1,3 +1,6 @@
+> This fork is to play with importing f3d archive files because they share some similarities.
+> [unzipped f3d]/FusionAssetName/Breps.BlobParts/*.smb(h) files are basically a 64-bit version of SAB files it seems
+
 # InventorLoader
 Loads/Imports: Autodesk (R) Inventor (R) files into FreeCAD (v0.17 or greater). 
 Until now only Parts (IPT) but not assemblies (IAM) or drawings (IDW) or presentations (IPN) can be displayed.
